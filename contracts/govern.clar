@@ -64,12 +64,14 @@
     (
       (proposal (unwrap! (map-get? proposals {proposal-id: proposal-id}) err-proposal-not-found))
       (current-block block-height)
+      ;; Check if voter has already voted (corrected)
+      (voter-vote (map-get? voter-votes {proposal-id: proposal-id, voter: tx-sender}))
     )
     ;; Check if voting is still open
     (asserts! (< current-block (get voting-end proposal)) err-voting-closed)
     
-    ;; Check if voter has already voted
-    (asserts! (is-eq (default-to false (map-get? voter-votes {proposal-id: proposal-id, voter: tx-sender})) false) err-already-voted)
+    ;; Check if voter has already voted (corrected)
+    (asserts! (is-none voter-vote) err-already-voted)
     
     ;; Record vote
     (map-set voter-votes 
