@@ -11,6 +11,7 @@
 (define-constant err-proposal-already-cancelled (err u106))
 (define-constant err-invalid-voting-duration (err u107))
 (define-constant err-cannot-modify-ended-proposal (err u108))
+(define-constant err-invalid-proposal-id (err u109))
 
 ;; Proposal structure
 (define-map proposals
@@ -43,7 +44,7 @@
       (proposal-id (var-get next-proposal-id))
       (current-block block-height)
     )
-    (asserts! (> voting-duration u0) err-not-owner)
+    (asserts! (> voting-duration u0) err-invalid-voting-duration)
     
     (map-set proposals 
       {proposal-id: proposal-id}
@@ -71,6 +72,9 @@
       (proposal (unwrap! (map-get? proposals {proposal-id: proposal-id}) err-proposal-not-found))
       (current-block block-height)
     )
+    ;; Ensure proposal-id is valid
+    (asserts! (< proposal-id (var-get next-proposal-id)) err-invalid-proposal-id)
+    
     ;; Ensure only the proposal creator can update
     (asserts! (is-eq tx-sender (get creator proposal)) err-not-proposal-creator)
     
@@ -103,6 +107,9 @@
       ;; Check if voter has already voted
       (voter-vote (map-get? voter-votes {proposal-id: proposal-id, voter: tx-sender}))
     )
+    ;; Ensure proposal-id is valid
+    (asserts! (< proposal-id (var-get next-proposal-id)) err-invalid-proposal-id)
+    
     ;; Check if voting is still open
     (asserts! (< current-block (get voting-end proposal)) err-voting-closed)
     
@@ -141,6 +148,9 @@
       (proposal (unwrap! (map-get? proposals {proposal-id: proposal-id}) err-proposal-not-found))
       (current-block block-height)
     )
+    ;; Ensure proposal-id is valid
+    (asserts! (< proposal-id (var-get next-proposal-id)) err-invalid-proposal-id)
+    
     ;; Ensure only the proposal creator can cancel
     (asserts! (is-eq tx-sender (get creator proposal)) err-not-proposal-creator)
     
@@ -168,6 +178,9 @@
       (proposal (unwrap! (map-get? proposals {proposal-id: proposal-id}) err-proposal-not-found))
       (current-block block-height)
     )
+    ;; Ensure proposal-id is valid
+    (asserts! (< proposal-id (var-get next-proposal-id)) err-invalid-proposal-id)
+    
     ;; Ensure voting is closed
     (asserts! (>= current-block (get voting-end proposal)) err-voting-closed)
     
