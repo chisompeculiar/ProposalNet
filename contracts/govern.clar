@@ -9,6 +9,8 @@
 (define-constant err-insufficient-votes (err u104))
 (define-constant err-not-proposal-creator (err u105))
 (define-constant err-proposal-already-cancelled (err u106))
+(define-constant err-invalid-voting-duration (err u107))
+(define-constant err-cannot-modify-ended-proposal (err u108))
 
 ;; Proposal structure
 (define-map proposals
@@ -59,6 +61,36 @@
     
     (var-set next-proposal-id (+ proposal-id u1))
     (ok proposal-id)
+  )
+)
+
+;; Update voting duration
+(define-public (update-voting-duration (proposal-id uint) (new-duration uint))
+  (let 
+    (
+      (proposal (unwrap! (map-get? proposals {proposal-id: proposal-id}) err-proposal-not-found))
+      (current-block block-height)
+    )
+    ;; Ensure only the proposal creator can update
+    (asserts! (is-eq tx-sender (get creator proposal)) err-not-proposal-creator)
+    
+    ;; Ensure proposal is not yet closed
+    (asserts! (< current-block (get voting-end proposal)) err-cannot-modify-ended-proposal)
+    
+    ;; Ensure new duration is valid (greater than 0)
+    (asserts! (> new-duration u0) err-invalid-voting-duration)
+    
+    ;; Ensure proposal is not cancelled or executed
+    (asserts! (not (get cancelled proposal)) err-proposal-already-cancelled)
+    (asserts! (not (get executed proposal)) err-proposal-not-found)
+    
+    ;; Update voting end block
+    (map-set proposals 
+      {proposal-id: proposal-id}
+      (merge proposal {voting-end: (+ current-block new-duration)})
+    )
+    
+    (ok true)
   )
 )
 
