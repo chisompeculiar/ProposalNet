@@ -43,8 +43,10 @@
     (
       (proposal-id (var-get next-proposal-id))
       (current-block block-height)
+      (description-length (len description))
     )
     (asserts! (> voting-duration u0) err-invalid-voting-duration)
+    (asserts! (<= description-length u500) (err u110)) ;; New error code for invalid description length
     
     (map-set proposals 
       {proposal-id: proposal-id}
